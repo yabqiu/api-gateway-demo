@@ -6,7 +6,7 @@ def build_response(body: object, status_code=200):
     return {
         'headers': { "Content-type": "application/json" },
         'statusCode': status_code,
-        'body': json.dumps(body, indent=4) + '\n'
+        'body': json.dumps(body, indent=4)
     }
 
 

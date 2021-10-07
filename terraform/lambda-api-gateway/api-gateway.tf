@@ -36,30 +36,6 @@ resource "aws_api_gateway_method" get_job_status {
   api_key_required = true
 }
 
-resource "aws_api_gateway_method_response" "method_response" {
-  count = length(local.resource_methods)
-  rest_api_id = local.rest_api.id
-  resource_id = local.resource_methods[count.index].resource_id
-  http_method = local.resource_methods[count.index].http_method
-  status_code = "200"
-
-  response_models = {
-    "application/json" = "Empty"
-  }
-}
-
-resource "aws_api_gateway_integration_response" "integration_response" {
-  count = length(local.resource_methods)
-  rest_api_id = local.rest_api.id
-  resource_id = local.resource_methods[count.index].resource_id
-  http_method = local.resource_methods[count.index].http_method
-  status_code = aws_api_gateway_method_response.method_response.*[count.index].status_code
-
-  response_templates = {
-    "application/json" = ""
-  }
-}
-
 resource aws_api_gateway_integration integration {
   count = length(local.resource_methods)
   rest_api_id = local.rest_api.id
@@ -70,10 +46,39 @@ resource aws_api_gateway_integration integration {
   uri = aws_lambda_function.apidemo-lambda.invoke_arn
 }
 
+#resource "aws_api_gateway_method_response" "method_response" {
+#  count = length(local.resource_methods)
+#  rest_api_id = local.rest_api.id
+#  resource_id = local.resource_methods[count.index].resource_id
+#  http_method = local.resource_methods[count.index].http_method
+#  status_code = "200"
+#
+#  response_models = {
+#    "application/json" = "Empty"
+#  }
+#
+#}
+#
+#resource "aws_api_gateway_integration_response" "integration_response" {
+#  count = length(local.resource_methods)
+#  rest_api_id = local.rest_api.id
+#  resource_id = local.resource_methods[count.index].resource_id
+#  http_method = local.resource_methods[count.index].http_method
+#  status_code = "200"
+#
+#  response_templates = {
+#    "application/json" = ""
+#  }
+#}
+
 resource "aws_api_gateway_deployment" "latest" {
   rest_api_id = local.rest_api.id
   stage_name = "stg"
   description = "Deploy driveapi to staging"
+  depends_on = [
+    aws_api_gateway_integration.integration[0],
+    aws_api_gateway_integration.integration[1]
+  ]
 }
 
 resource "aws_api_gateway_usage_plan" "demoapi_usage_plan" {
@@ -114,8 +119,4 @@ locals {
     aws_api_gateway_method.get_job_status,
     aws_api_gateway_method.post_job
   ]
-}
-
-output "name" {
-  value = aws_api_gateway_integration.integration 
 }
